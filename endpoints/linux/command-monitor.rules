@@ -1,0 +1,52 @@
+## ── Wazuh OpenCTI Targeted Command Monitor Rules ──────────────────
+## Only these specific binaries are logged — nothing else
+## Key = command_monitor — picked up by Wazuh rule 100500
+
+# Download tools
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/curl     -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/wget     -k command_monitor
+
+# ICMP / Ping
+-a always,exit -F arch=b64 -S execve -F path=/bin/ping         -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/bin/ping6        -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/ping     -k command_monitor
+
+# DNS tools
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/nslookup -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/dig      -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/host     -k command_monitor
+
+# Port scanning
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/nmap     -k command_monitor
+
+# Reverse shell / tunneling
+-a always,exit -F arch=b64 -S execve -F path=/bin/nc           -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/nc       -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/netcat   -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/ncat     -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/socat    -k command_monitor
+
+# File transfer
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/ftp      -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/tftp     -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/scp      -k command_monitor
+
+# SSH outbound
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/ssh      -k command_monitor
+
+# Packet capture / crypto
+-a always,exit -F arch=b64 -S execve -F path=/usr/sbin/tcpdump -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/openssl  -k command_monitor
+
+# Plaintext remote
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/telnet   -k command_monitor
+
+# Scripting / interpreters
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/python3  -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/python   -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/php      -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/usr/bin/perl     -k command_monitor
+
+# Shells
+-a always,exit -F arch=b64 -S execve -F path=/bin/bash         -k command_monitor
+-a always,exit -F arch=b64 -S execve -F path=/bin/sh           -k command_monitor

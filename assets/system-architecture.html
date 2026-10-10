@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wazuh + OpenCTI — Real-Time Enrichment &amp; Alerting Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#090d16; --canvas:#0d121f; --surface:#131929; --inner:#172036;
+    --border:#232c42; --text:#f1f5f9; --text2:#94a3b8; --muted:#64748b;
+    --connector:#64748b;
+    --e:#3b82f6; --e-bg:rgba(59,130,246,.07); --e-bd:rgba(59,130,246,.35);
+    --m:#f59e0b; --m-bg:rgba(245,158,11,.07); --m-bd:rgba(245,158,11,.35);
+    --o:#10b981; --o-bg:rgba(16,185,129,.07); --o-bd:rgba(16,185,129,.35);
+    --x:#0ea5e9; --x-bg:rgba(14,165,233,.07); --x-bd:rgba(14,165,233,.35);
+    --loop:#10b981;
+  }
+  [data-theme="light"]{
+    --bg:#f8fafc; --canvas:#ffffff; --surface:#ffffff; --inner:#f8fafc;
+    --border:#cbd5e1; --text:#0f172a; --text2:#475569; --muted:#64748b;
+    --connector:#94a3b8;
+    --e:#2563eb; --e-bg:#eff6ff; --e-bd:#bfdbfe;
+    --m:#d97706; --m-bg:#fffbeb; --m-bd:#fde68a;
+    --o:#059669; --o-bg:#ecfdf5; --o-bd:#a7f3d0;
+    --x:#0284c7; --x-bg:#f0f9ff; --x-bd:#bae6fd;
+    --loop:#059669;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Segoe UI,Roboto,sans-serif;padding:24px 20px 50px;transition:background .25s,color .25s;}
+  .container{max-width:1760px;margin:0 auto;}
+  .header{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:16px;}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.2px;}
+  .sub{font-size:13px;color:var(--text2);margin-top:4px;max-width:900px;line-height:1.5;}
+  .toggle{font:600 12px 'Inter';background:var(--inner);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 14px;cursor:pointer;}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:0 4px 14px;font-size:12px;color:var(--text2);font-weight:500;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .canvas{background:var(--canvas);border:1px solid var(--border);border-radius:14px;overflow-x:auto;}
+  .diagram-tools{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text2);font-size:12px;}
+  .diagram-tools button{min-width:34px;height:30px;padding:0 10px;background:var(--inner);color:var(--text);border:1px solid var(--border);border-radius:6px;font:600 12px 'Inter';cursor:pointer;}
+  .diagram-tools button:hover{border-color:var(--x);}
+  #zoomLevel{min-width:48px;text-align:center;font-variant-numeric:tabular-nums;}
+  svg{display:block;width:1780px;max-width:none;height:auto;}
+  .lane{stroke-width:1.4;}
+  .lane-title{font:800 12px 'Inter';letter-spacing:1.2px;}
+  .nbox{fill:var(--surface);stroke-width:1.4;}
+  .nt{font:700 13px 'Inter';fill:var(--text);}
+  .ns{font:500 10.5px 'Inter';fill:var(--text2);}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .ar{fill:none;stroke:var(--connector);stroke-width:1.9;}
+  .ar.loop{stroke:var(--loop);stroke-width:2.2;}
+  .ar.dash{stroke-dasharray:6 5;}
+  .lb{font:600 10px 'Inter';fill:var(--text2);paint-order:stroke;stroke:var(--canvas);stroke-width:4px;stroke-linejoin:round;}
+  .bd{fill:var(--text);}
+  .bt{font:800 10px 'Inter';fill:var(--canvas);text-anchor:middle;}
+  .mk{fill:var(--connector);} .mkl{fill:var(--loop);}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px;margin-top:16px;}
+  .step{display:flex;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+  .step b.n{flex:0 0 24px;height:24px;border-radius:50%;background:var(--text);color:var(--canvas);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;}
+  .step h4{font-size:12.5px;font-weight:700;margin-bottom:2px;}
+  .step p{font-size:11.5px;color:var(--text2);line-height:1.45;}
+  footer{margin-top:16px;font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>Wazuh + OpenCTI — Real-Time Enrichment &amp; Alerting Architecture</h1>
+      <p class="sub">Endpoint telemetry is decoded by Wazuh, selected alerts are enriched live through OpenCTI's GraphQL API, eligible direct indicator matches can create a STIX sighting, and the enriched event is re-injected for rule evaluation, dashboard visibility and optional Telegram notification.</p>
+    </div>
+    <button class="toggle" id="themeBtn">Switch to light theme</button>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--e)"></span>Monitored endpoints</span>
+    <span><span class="dot" style="background:var(--m)"></span>Wazuh manager</span>
+    <span><span class="dot" style="background:var(--o)"></span>OpenCTI platform</span>
+    <span><span class="dot" style="background:var(--x)"></span>Alert outputs</span>
+    <span><span class="dot" style="background:var(--loop);border-radius:50%"></span>Bidirectional intel loop (lookup · sighting)</span>
+    <span>Dashed = optional, configuration, or unconfigured standard transport</span>
+  </div>
+
+  <div class="canvas">
+  <div class="diagram-tools" aria-label="Diagram zoom controls">
+    <button type="button" id="fitDiagram" title="Fit the complete diagram to this viewport">Fit</button>
+    <button type="button" id="zoomOut" title="Zoom out" aria-label="Zoom out">−</button>
+    <span id="zoomLevel" aria-live="polite">100%</span>
+    <button type="button" id="zoomIn" title="Zoom in" aria-label="Zoom in">+</button>
+    <span>Scroll the diagram horizontally or zoom in to inspect details.</span>
+  </div>
+  <svg viewBox="0 0 1780 880" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="ahl" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mkl" d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+
+    <!-- LANES -->
+    <rect class="lane" x="30"   y="70" width="260" height="770" rx="14" style="fill:var(--e-bg);stroke:var(--e-bd)"/>
+    <text class="lane-title" x="52" y="98" style="fill:var(--e)">1 · MONITORED ENDPOINTS</text>
+    <rect class="lane" x="330"  y="70" width="800" height="770" rx="14" style="fill:var(--m-bg);stroke:var(--m-bd)"/>
+    <text class="lane-title" x="352" y="98" style="fill:var(--m)">2 · WAZUH MANAGER</text>
+    <rect class="lane" x="1170" y="70" width="260" height="770" rx="14" style="fill:var(--o-bg);stroke:var(--o-bd)"/>
+    <text class="lane-title" x="1192" y="98" style="fill:var(--o)">3 · OPENCTI</text>
+    <rect class="lane" x="1470" y="70" width="280" height="770" rx="14" style="fill:var(--x-bg);stroke:var(--x-bd)"/>
+    <text class="lane-title" x="1492" y="98" style="fill:var(--x)">4 · ALERT OUTPUTS</text>
+
+    <!-- CONNECTORS (drawn first, under nodes) -->
+    <!-- endpoint -> agent -->
+    <path class="ar" d="M160,200 V250" marker-end="url(#ah)"/>
+    <path class="ar" d="M160,490 V540" marker-end="url(#ah)"/>
+    <path class="ar dash" d="M160,710 V750" marker-end="url(#ah)"/>
+    <!-- agents -> analysisd -->
+    <path class="ar" d="M270,280 H315"/>
+    <path class="ar" d="M270,570 H315 V270 H370" marker-end="url(#ah)"/>
+    <path class="ar dash" d="M270,780 H315" marker-end="url(#ah)"/>
+    <!-- analysisd -> integratord -->
+    <path class="ar" d="M590,245 H615 V165 H640" marker-end="url(#ah)"/>
+    <!-- integratord -> hook -->
+    <path class="ar" d="M750,200 V330" marker-end="url(#ah)"/>
+    <!-- integratord -> telegram -> API -> chat -->
+    <path class="ar dash" d="M860,165 H900" marker-end="url(#ah)"/>
+    <path class="ar dash" d="M1100,165 H1490" marker-end="url(#ah)"/>
+    <path class="ar dash" d="M1600,200 V230" marker-end="url(#ah)"/>
+    <!-- hook <-> platform -->
+    <path class="ar loop" d="M860,355 H1190" marker-end="url(#ahl)"/>
+    <path class="ar loop" d="M860,380 H1190" marker-end="url(#ahl)"/>
+    <path class="ar loop" d="M1190,410 H860" marker-end="url(#ahl)"/>
+    <!-- feeds -> platform -> iocs -->
+    <path class="ar" d="M1300,560 V430" marker-end="url(#ah)"/>
+    <path class="ar" d="M1300,330 V280" marker-end="url(#ah)"/>
+    <!-- hook -> queue (re-inject) -> analysisd -->
+    <path class="ar" d="M680,430 V585 H480 V640" marker-end="url(#ah)"/>
+    <path class="ar" d="M370,680 H348 V305 H370" marker-end="url(#ah)"/>
+    <!-- hook <-> state -->
+    <path class="ar" d="M780,430 V640" marker-start="url(#ah)" marker-end="url(#ah)"/>
+    <!-- rules config -> analysisd; alert outputs from analysisd -->
+    <path class="ar dash" d="M480,470 V350" marker-end="url(#ah)"/>
+    <path class="ar dash" d="M590,305 H1135 V735 H1490" marker-end="url(#ah)"/>
+    <path class="ar" d="M1600,700 V545" marker-end="url(#ah)"/>
+
+    <!-- NODES: endpoints -->
+    <g transform="translate(50,130)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--e)"/><rect width="5" height="70" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="29">Windows endpoints</text><text class="ns" x="18" y="48">Sysmon + FIM + registry</text></g>
+    <g transform="translate(50,250)"><rect class="nbox" width="220" height="60" rx="10" style="stroke:var(--e)"/><rect width="5" height="60" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="27">Wazuh agent</text><text class="ns" x="18" y="45">telemetry forwarder</text></g>
+    <g transform="translate(50,420)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--e)"/><rect width="5" height="70" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="29">Linux endpoints</text><text class="ns" x="18" y="48">auditd + FIM</text></g>
+    <g transform="translate(50,540)"><rect class="nbox" width="220" height="60" rx="10" style="stroke:var(--e)"/><rect width="5" height="60" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="27">Wazuh agent</text><text class="ns" x="18" y="45">telemetry forwarder</text></g>
+    <g transform="translate(50,650)"><rect class="nbox" width="220" height="60" rx="10" style="stroke:var(--e);stroke-dasharray:5 4"/><rect width="5" height="60" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="27">Optional collected sources</text><text class="ns" x="18" y="45">IDS / Packetbeat, osquery, network</text></g>
+    <g transform="translate(50,750)"><rect class="nbox" width="220" height="60" rx="10" style="stroke:var(--e);stroke-dasharray:5 4"/><rect width="5" height="60" rx="2" style="fill:var(--e)"/><text class="nt" x="18" y="27">Agent / manager input</text><text class="ns" x="18" y="45">only when configured</text></g>
+
+    <!-- NODES: manager -->
+    <g transform="translate(370,220)"><rect class="nbox" width="220" height="100" rx="10" style="stroke:var(--m)"/><rect width="5" height="100" rx="2" style="fill:var(--m)"/><text class="nt mono" x="18" y="32">analysisd</text><text class="ns" x="18" y="52">decoders and rules</text><text class="ns" x="18" y="68">agent-attributed event analysis</text></g>
+    <g transform="translate(640,130)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--m)"/><rect width="5" height="70" rx="2" style="fill:var(--m)"/><text class="nt mono" x="18" y="29">integratord</text><text class="ns" x="18" y="48">alert dispatch</text></g>
+    <g transform="translate(900,130)"><rect class="nbox" width="200" height="70" rx="10" style="stroke:var(--m);stroke-dasharray:5 4"/><rect width="5" height="70" rx="2" style="fill:var(--m)"/><text class="nt mono" x="18" y="29" style="font-size:12px">custom-telegram.py</text><text class="ns" x="18" y="48">optional notifier</text></g>
+    <g transform="translate(640,330)"><rect class="nbox" width="220" height="100" rx="10" style="stroke:var(--o);stroke-width:2"/><rect width="5" height="100" rx="2" style="fill:var(--o)"/><text class="nt mono" x="18" y="32" style="font-size:12px">custom-opencti.py</text><text class="ns" x="18" y="52">IOC extraction</text><text class="ns" x="18" y="68">+ GraphQL lookup</text></g>
+    <g transform="translate(370,470)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--m)"/><rect width="5" height="70" rx="2" style="fill:var(--m)"/><text class="nt" x="18" y="29">Wazuh rules XML</text><text class="ns mono" x="18" y="48">loaded into analysisd</text></g>
+    <g transform="translate(370,640)"><rect class="nbox" width="220" height="80" rx="10" style="stroke:var(--m)"/><rect width="5" height="80" rx="2" style="fill:var(--m)"/><text class="nt" x="18" y="29">Local socket / queue</text><text class="ns" x="18" y="48">re-injects enriched events</text><text class="ns" x="18" y="63">as agent-attributed events</text></g>
+    <g transform="translate(640,640)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--m)"/><rect width="5" height="70" rx="2" style="fill:var(--m)"/><text class="nt" x="18" y="29">State file</text><text class="ns" x="18" y="48">sighting dedupe + identity cache</text></g>
+
+    <!-- NODES: OpenCTI -->
+    <g transform="translate(1190,210)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--o)"/><rect width="5" height="70" rx="2" style="fill:var(--o)"/><text class="nt" x="18" y="29">Indicators + observables</text><text class="ns" x="18" y="48">STIX knowledge graph</text></g>
+    <g transform="translate(1190,330)"><rect class="nbox" width="220" height="100" rx="10" style="stroke:var(--o);stroke-width:2"/><rect width="5" height="100" rx="2" style="fill:var(--o)"/><text class="nt" x="18" y="32">OpenCTI platform</text><text class="ns" x="18" y="52">GraphQL API</text><text class="ns" x="18" y="68">lookups + sightings mutation</text></g>
+    <g transform="translate(1190,560)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--o)"/><rect width="5" height="70" rx="2" style="fill:var(--o)"/><text class="nt" x="18" y="29">Threat feeds / connectors</text><text class="ns" x="18" y="48">external intelligence sources</text></g>
+
+    <!-- NODES: outputs -->
+    <g transform="translate(1490,130)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--x);stroke-dasharray:5 4"/><rect width="5" height="70" rx="2" style="fill:var(--x)"/><text class="nt" x="18" y="29">Telegram Bot API</text><text class="ns mono" x="18" y="48">sendMessage</text></g>
+    <g transform="translate(1490,230)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--x);stroke-dasharray:5 4"/><rect width="5" height="70" rx="2" style="fill:var(--x)"/><text class="nt" x="18" y="29">Telegram chat</text><text class="ns" x="18" y="48">instant SOC notification</text></g>
+    <g transform="translate(1490,470)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--x)"/><rect width="5" height="70" rx="2" style="fill:var(--x)"/><text class="nt" x="18" y="29">Wazuh dashboard</text><text class="ns" x="18" y="48">enriched alert with intel context</text></g>
+    <g transform="translate(1490,700)"><rect class="nbox" width="220" height="70" rx="10" style="stroke:var(--x)"/><rect width="5" height="70" rx="2" style="fill:var(--x)"/><text class="nt" x="18" y="29">Wazuh indexer</text><text class="ns" x="18" y="48">alert storage and search</text></g>
+
+    <!-- LABELS -->
+    <text class="lb" x="304" y="340" text-anchor="middle" transform="rotate(-90 304 340)">telemetry</text>
+    <text class="lb" x="343" y="505" text-anchor="middle" transform="rotate(-90 343 505)">re-processed event</text>
+    <text class="lb" x="622" y="222">selected alert JSON</text>
+    <text class="lb" x="758" y="268">configured alert groups</text>
+    <text class="lb" x="880" y="222" text-anchor="middle">opencti_alert / opencti_high</text>
+    <text class="lb" x="1300" y="157" text-anchor="middle">sendMessage</text>
+    <text class="lb" x="1025" y="349" text-anchor="middle">GraphQL lookup</text>
+    <text class="lb" x="1025" y="374" text-anchor="middle">sightings mutation</text>
+    <text class="lb" x="1025" y="404" text-anchor="middle">indicator + observable results</text>
+    <text class="lb" x="1308" y="500">STIX ingestion</text>
+    <text class="lb" x="1308" y="318">indexed</text>
+    <text class="lb" x="560" y="578" text-anchor="middle">enriched event</text>
+    <text class="lb" x="850" y="298" text-anchor="middle">standard alert output to indexer</text>
+    <text class="lb" x="1020" y="728" text-anchor="middle">standard output transport</text>
+    <text class="lb" x="790" y="540">dedupe state</text>
+
+    <!-- BADGES -->
+    <g><circle class="bd" cx="315" cy="400" r="10"/><text class="bt" x="315" y="404">1</text></g>
+    <g><circle class="bd" cx="615" cy="205" r="10"/><text class="bt" x="615" y="209">2</text></g>
+    <g><circle class="bd" cx="750" cy="300" r="10"/><text class="bt" x="750" y="304">3</text></g>
+    <g><circle class="bd" cx="920" cy="355" r="10"/><text class="bt" x="920" y="359">4</text></g>
+    <g><circle class="bd" cx="920" cy="380" r="10"/><text class="bt" x="920" y="384">5</text></g>
+    <g><circle class="bd" cx="920" cy="410" r="10"/><text class="bt" x="920" y="414">6</text></g>
+    <g><circle class="bd" cx="680" cy="520" r="10"/><text class="bt" x="680" y="524">7</text></g>
+    <g><circle class="bd" cx="1140" cy="505" r="10"/><text class="bt" x="1140" y="509">8</text></g>
+    <g><circle class="bd" cx="1000" cy="165" r="10"/><text class="bt" x="1000" y="169">9</text></g>
+  </svg>
+  </div>
+
+  <div class="steps">
+    <div class="step"><b class="n">1</b><div><h4>Telemetry collection</h4><p>Windows and Linux agents forward endpoint events. Optional IDS/Packetbeat, osquery, and network alerts require collection and routing to be configured.</p></div></div>
+    <div class="step"><b class="n">2</b><div><h4>Decode and select</h4><p><span class="mono">analysisd</span> applies decoders and rules; alerts matching configured groups are handed to <span class="mono">integratord</span>.</p></div></div>
+    <div class="step"><b class="n">3</b><div><h4>Integration trigger</h4><p><span class="mono">integratord</span> dispatches the selected alert JSON to <span class="mono">custom-opencti.py</span>.</p></div></div>
+    <div class="step"><b class="n">4</b><div><h4>Live GraphQL lookup</h4><p>The hook extracts IOCs and queries OpenCTI in real time, with no local IOC files to sync.</p></div></div>
+    <div class="step"><b class="n">5</b><div><h4>Sighting write-back</h4><p>Eligible direct indicator matches create a STIX sighting in OpenCTI; filename and related-indicator matches do not. The state file prevents duplicates.</p></div></div>
+    <div class="step"><b class="n">6</b><div><h4>Context returned</h4><p>Indicator and observable results flow back to the hook and are merged with the original alert.</p></div></div>
+    <div class="step"><b class="n">7</b><div><h4>Re-injection</h4><p>The enriched event is pushed through a local socket/queue and re-processed as an agent-attributed event.</p></div></div>
+    <div class="step"><b class="n">8</b><div><h4>Rules and visibility</h4><p>Rules 100210–100222 are loaded into <span class="mono">analysisd</span>; resulting alerts reach the dashboard and standard indexer output.</p></div></div>
+    <div class="step"><b class="n">9</b><div><h4>Optional Telegram alert</h4><p><span class="mono">opencti_alert</span> / <span class="mono">opencti_high</span> groups at level 10+ trigger <span class="mono">custom-telegram.py</span> to message the SOC chat through the Bot API.</p></div></div>
+  </div>
+
+  <footer>
+    <span>Closed-loop automation: detection → intelligence enrichment → sighting evidence → re-evaluation.</span>
+    <span>Prepared by Abu Saeid</span>
+  </footer>
+</div>
+<script>
+  var btn=document.getElementById('themeBtn');
+  btn.addEventListener('click',function(){
+    var r=document.documentElement;
+    var light=r.getAttribute('data-theme')==='light';
+    r.setAttribute('data-theme',light?'dark':'light');
+    btn.textContent=light?'Switch to light theme':'Switch to dark theme';
+  });
+  var canvas=document.querySelector('.canvas');
+  var diagram=document.querySelector('svg');
+  var zoomLabel=document.getElementById('zoomLevel');
+  var zoom=1;
+  var fitted=false;
+  function setZoom(value){
+    zoom=Math.max(0.15,Math.min(1.5,value));
+    diagram.style.width=Math.round(1780*zoom)+'px';
+    zoomLabel.textContent=Math.round(zoom*100)+'%';
+  }
+  function fitDiagram(){
+    fitted=true;
+    setZoom(Math.max(0.15,Math.min(1,canvas.clientWidth/1780)));
+    canvas.scrollLeft=0;
+  }
+  document.getElementById('fitDiagram').addEventListener('click',fitDiagram);
+  document.getElementById('zoomOut').addEventListener('click',function(){fitted=false;setZoom(zoom/1.2);});
+  document.getElementById('zoomIn').addEventListener('click',function(){fitted=false;setZoom(zoom*1.2);});
+  window.addEventListener('resize',function(){if(fitted)fitDiagram();});
+  fitDiagram();
+</script>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!-- Sysmon event-group rules (101100-101115): raise Sysmon events to level 5 and tag them with
+     the sysmon_eventN groups used by the <integration> block. Install: 0300-sysmon-event-groups.xml
+     Requires Sysmon on the Windows endpoints (see endpoints/windows/sysmon-setup.md). -->
+
+<!-- SYSMON -->
+
+<group name="windows,sysmon,">
+
+  <rule id="101100" level="5">
+    <if_sid>61650</if_sid>
+    <description>Sysmon - DNS Query: $(win.eventdata.queryName) ($(win.eventdata.image))</description>
+    <group>sysmon_event22</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101103" level="5">
+    <if_sid>61605</if_sid>
+    <description>Sysmon - Network Connection: $(win.eventdata.destinationIp) ($(win.eventdata.image))</description>
+    <group>sysmon_event3</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101101" level="5">
+    <if_sid>61603</if_sid>
+    <description>Sysmon - Process Created: $(win.eventdata.commandLine)</description>
+    <group>sysmon_event1</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101107" level="5">
+    <if_sid>61609</if_sid>
+    <description>Sysmon - Image Loaded: $(win.eventdata.originalFileName)</description>
+    <group>sysmon_event7</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101115" level="5">
+    <if_sid>61617</if_sid>
+    <description>Sysmon - File Stream Created: $(win.eventdata.targetFilename)</description>
+    <group>sysmon_event15</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101102" level="5">
+    <if_sid>61604</if_sid>
+    <description>Sysmon - Event 2: File creation time changed</description>
+    <group>sysmon_event2</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101104" level="5">
+    <if_sid>61606</if_sid>
+    <description>Sysmon - Event 4: Sysmon service state changed</description>
+    <group>sysmon_event4</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101105" level="5">
+    <if_sid>61607</if_sid>
+    <description>Sysmon - Event 5: Process terminated</description>
+    <group>sysmon_event5</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101106" level="5">
+    <if_sid>61608</if_sid>
+    <description>Sysmon - Event 6: Driver loaded</description>
+    <group>sysmon_event6</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101108" level="5">
+    <if_sid>61610</if_sid>
+    <description>Sysmon - Event 8: CreateRemoteThread</description>
+    <group>sysmon_event8</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101109" level="5">
+    <if_sid>61611</if_sid>
+    <description>Sysmon - Event 9: RawAccessRead</description>
+    <group>sysmon_event9</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101110" level="5">
+    <if_sid>61612</if_sid>
+    <description>Sysmon - Event 10: ProcessAccess</description>
+    <group>sysmon_event10</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101111" level="5">
+    <if_sid>61613</if_sid>
+    <description>Sysmon - Event 11: FileCreate</description>
+    <group>sysmon_event11</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101112" level="5">
+    <if_sid>61614</if_sid>
+    <description>Sysmon - Event 12: Registry create/delete</description>
+    <group>sysmon_event12</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101113" level="5">
+    <if_sid>61615</if_sid>
+    <description>Sysmon - Event 13: Registry value set</description>
+    <group>sysmon_event13</group>
+    <options>no_full_log</options>
+  </rule>
+
+  <rule id="101114" level="5">
+    <if_sid>61616</if_sid>
+    <description>Sysmon - Event 14: Registry rename</description>
+    <group>sysmon_event14</group>
+    <options>no_full_log</options>
+  </rule>
+
+</group>

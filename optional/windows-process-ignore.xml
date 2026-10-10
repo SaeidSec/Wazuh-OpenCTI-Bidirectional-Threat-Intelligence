@@ -1,0 +1,52 @@
+<!-- OPTIONAL - NOT INSTALLED BY DEFAULT.
+     These rules use <if_sid>100691</if_sid>, a Windows 4688 process-creation rule that lives in
+     opencti-endpoint-ioc-rules.xml, which was NOT part of the uploaded repos. If 100691 does not
+     exist, wazuh-analysisd refuses to load the ruleset and the manager will not start.
+     Only copy this file into /var/ossec/etc/rules/ after rule 100691 is defined.
+     Also read the rundll32/auditpol caution below before enabling 100621. -->
+
+<!-- ============================================================
+     PROCESS CREATION IGNORE / SUPPRESSION RULES
+     Children of rule 100691 ("Windows: Process created -
+     $(win.eventdata.newProcessName)") in opencti-endpoint-ioc-
+     rules.xml. Same benign-noise-suppression pattern as the FIM
+     block above, applied to Windows Security 4688 process creation.
+     ============================================================ -->
+
+<group name="windows,process_creation,noise_suppression,">
+
+  <!-- ── 14. Benign Windows system UI/session helper processes ──
+       Create constantly under any interactive Windows session.
+       No persistence mechanism, no meaningful history as LOLBins,
+       no network behavior of note - safe to fully suppress the
+       same way the FIM noise above is.
+  -->
+  <rule id="100620" level="0">
+    <if_sid>100691</if_sid>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(smartscreen|SecurityHealthHost|taskhostw|conhost)\.exe$</field>
+    <description>Ignore: benign Windows system process creation (UI/session helpers)</description>
+  </rule>
+
+  <!-- ── 15. rundll32.exe / auditpol.exe — READ BEFORE DEPLOYING ──
+       CAUTION: both are legitimate most of the time, but both are
+       also commonly abused:
+         - rundll32.exe: classic LOLBin for DLL side-loading and
+           fileless payload execution.
+         - auditpol.exe: changing audit policy is the exact
+           mechanism behind T1562.002 (Impair Defenses: Disable
+           Windows Event Logging) - attackers run this to blind
+           logging right before an attack.
+       Suppressing these at level 0 means losing visibility into
+       both techniques entirely, not just noise reduction. Included
+       here because they matched the noise in the dashboard, but
+       consider either removing this rule, or scoping it further
+       (e.g. requiring a trusted parent process) instead of a blanket
+       ignore, before deploying to production.
+  -->
+  <rule id="100621" level="0">
+    <if_sid>100691</if_sid>
+    <field name="win.eventdata.newProcessName" type="pcre2">(?i)\\(rundll32|auditpol)\.exe$</field>
+    <description>Ignore: rundll32/auditpol process creation (see caution comment - LOLBin/log-tampering risk)</description>
+  </rule>
+
+</group>

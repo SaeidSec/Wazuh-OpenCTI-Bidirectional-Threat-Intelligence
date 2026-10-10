@@ -1,0 +1,7 @@
+{
+  "_comment": "Copy to /var/ossec/integrations/custom-telegram.conf.json (root:wazuh, 640)",
+  "chat_id": "-100XXXXXXXXXX",
+  "min_level": 5,
+  "only_groups": [],
+  "verify_tls": true
+}

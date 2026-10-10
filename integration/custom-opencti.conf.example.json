@@ -1,0 +1,11 @@
+{
+  "_comment": "Copy to /var/ossec/integrations/custom-opencti.conf.json (root:wazuh, 640). Only keys you list are overridden.",
+  "MIN_SCORE": 30,
+  "VERIFY_TLS": true,
+  "CREATE_SIGHTINGS": true,
+  "SIGHTING_DEDUPE_SECONDS": 3600,
+  "WAZUH_IDENTITY_ID": "",
+  "WAZUH_IDENTITY_NAME": "Wazuh SIEM",
+  "EMIT_OBSERVABLE_WITHOUT_INDICATOR": false,
+  "EXTRACT_GENERIC_IPS": true
+}

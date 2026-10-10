@@ -1,0 +1,9 @@
+<!-- Optional Telegram notifications. Bot token goes in hook_url; chat id in
+     /var/ossec/integrations/custom-telegram.conf.json. Fires only for OpenCTI matches (level >= 10). -->
+<integration>
+  <name>custom-telegram</name>
+  <hook_url>https://api.telegram.org/botPUT_BOT_TOKEN_HERE</hook_url>
+  <group>opencti_alert,opencti_high</group>
+  <level>10</level>
+  <alert_format>json</alert_format>
+</integration>

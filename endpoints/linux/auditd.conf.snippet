@@ -1,0 +1,14 @@
+# How many log files to keep
+num_logs = 5
+
+# Max size per log file in MB — keep small to save storage
+max_log_file = 20
+
+# What to do when log is full — rotate is safest
+max_log_file_action = ROTATE
+
+# Where logs go (default is fine)
+log_file = /var/log/audit/audit.log
+
+# Write logs immediately (important for Wazuh)
+flush = INCREMENTAL_ASYNC

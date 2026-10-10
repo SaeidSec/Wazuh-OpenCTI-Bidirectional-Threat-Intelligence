@@ -1,0 +1,15 @@
+<!-- Add inside <ossec_config> of /var/ossec/etc/ossec.conf on the Wazuh MANAGER, then:
+     systemctl restart wazuh-manager
+     The integration only runs for alerts that carry one of the listed rule groups.
+     (Both sysmon_eventNN and sysmon_event_NN spellings are listed; unused names are harmless.) -->
+<integration>
+  <name>custom-opencti</name>
+  <group>sysmon_event1,sysmon_event3,sysmon_event6,sysmon_event7,sysmon_event15,sysmon_event22,sysmon_event23,sysmon_event24,sysmon_event25,sysmon_event_22,sysmon_event_23,sysmon_event_24,sysmon_event_25,sysmon_eid3_detections,sysmon_eid22_detections,syscheck_file,syscheck_entry_added,syscheck_entry_modified,syscheck_registry,ids,osquery,osquery_file,audit_command,auditd</group>
+  <alert_format>json</alert_format>
+  <api_key>PUT_OPENCTI_API_TOKEN_HERE</api_key>
+  <hook_url>http://OPENCTI_HOST:8080/graphql</hook_url>
+</integration>
+
+<!-- Optional: also enrich SSH brute-force / firewall source IPs (generic srcip/dstip lookup).
+     Append these groups to the <group> list above:  authentication_failed,sshd
+     Do NOT use a low <level> filter instead - it sends nearly every alert through the script. -->
